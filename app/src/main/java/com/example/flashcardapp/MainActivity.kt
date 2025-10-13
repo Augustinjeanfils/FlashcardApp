@@ -1,9 +1,11 @@
 package com.example.flashcardapp
 
+import android.animation.Animator
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.view.ViewAnimationUtils
 import android.widget.Button
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
@@ -24,6 +26,45 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_main)
+
+        // pour supprimer une carte
+
+        findViewById<View>(R.id.delete_btn).setOnClickListener {
+            // 1️⃣ On récupère la question actuellement affichée
+            val flashcardQuestionToDelete = findViewById<TextView>(R.id.textView_question).text.toString()
+
+            // 2️⃣ On la supprime de la base de données
+            flashcardDatabase.deleteCard(flashcardQuestionToDelete)
+
+            // 3️⃣ On recharge la liste des cartes depuis la base de données
+            allFlashcards = flashcardDatabase.getAllCards().toMutableList()
+
+            // 4️⃣ On ajuste l’index courant (au cas où la dernière carte a été supprimée)
+            if (allFlashcards.size == 0) {
+                // Plus de cartes ! On affiche un message sympathique
+                findViewById<TextView>(R.id.textView_question).text = "Aucune carte restante 😅"
+                findViewById<TextView>(R.id.textView_response).text = ""
+            } else {
+                // Si l’index actuel dépasse la taille, on revient au début
+                if (currentCardDisplayIndex >= allFlashcards.size) {
+                    currentCardDisplayIndex = 0
+                }
+
+                // 5️⃣ On affiche la carte suivante disponible
+                val currentCard = allFlashcards[currentCardDisplayIndex]
+                findViewById<TextView>(R.id.textView_question).text = currentCard.question
+                findViewById<TextView>(R.id.textView_response).text = currentCard.answer
+            }
+
+            // (Optionnel) Petit feedback utilisateur
+            Snackbar.make(findViewById(R.id.main), "Carte supprimée ✅", Snackbar.LENGTH_SHORT).show()
+        }
+
+
+
+
+
+
 
         findViewById<View>(R.id.nextBtn).setOnClickListener {
             if (allFlashcards.size == 0){
@@ -70,6 +111,62 @@ class MainActivity : AppCompatActivity() {
             textviewQuestion.visibility = View.INVISIBLE
             textviewReponse.visibility = View.VISIBLE
         }
+
+        // pour montre la response quand on clique sur la question en circle
+
+        val questionSideView = findViewById<View>(R.id.textView_question)
+        val responseSideView = findViewById<View>(R.id.textView_response)
+
+        questionSideView.setOnClickListener {
+            val cx = responseSideView.width / 2
+            val cy = responseSideView.height / 2
+
+            val finalRadius = Math.hypot(cx.toDouble(), cy.toDouble()).toFloat()
+            val anim = ViewAnimationUtils.createCircularReveal(
+                responseSideView, cx, cy, 0f, finalRadius
+            )
+            questionSideView.visibility = View.INVISIBLE
+            responseSideView.visibility = View.VISIBLE
+            anim.duration = 1000
+            anim.start()
+
+        }
+
+        // L'inverse pour montre la question quand on clique sur la reponse en circle
+
+        responseSideView.setOnClickListener {
+            val cx = responseSideView.width / 2
+            val cy = responseSideView.height / 2
+            val initialRadius = Math.hypot(cx.toDouble(), cy.toDouble()).toFloat()
+
+            val anim = ViewAnimationUtils.createCircularReveal(responseSideView, cx, cy, initialRadius, 0f)
+
+            anim.addListener(object : Animator.AnimatorListener {
+                override fun onAnimationStart(animation: Animator) {
+                    // No action needed here
+                }
+
+                override fun onAnimationEnd(animation: Animator) {
+                    responseSideView.visibility = View.INVISIBLE
+                    questionSideView.visibility = View.VISIBLE
+                }
+
+                override fun onAnimationCancel(animation: Animator) {
+                    // No action needed here
+                }
+
+                override fun onAnimationRepeat(animation: Animator) {
+                    // No action needed here
+                }
+
+
+            })
+
+            anim.duration = 1000
+            anim.start()
+        }
+
+
 
         val resultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
 
@@ -123,6 +220,7 @@ class MainActivity : AppCompatActivity() {
         findViewById<View>(R.id.myBtn).setOnClickListener{
             val intent = Intent (this, AddCardActivity::class.java)
             resultLauncher.launch(intent)
+            overridePendingTransition(R.anim.left_out, R.anim.right_in)
         }
 
 
