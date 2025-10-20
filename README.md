@@ -9,8 +9,6 @@ https://i.postimg.cc/DfGgYMRn/Screen-Recording-2025-10-20-at-3-37-55-PM.gif
 
 <img src="https://i.postimg.cc/DfGgYMRn/Screen-Recording-2025-10-20-at-3-37-55-PM.gif" width=200><br>
 
-`TODO://` In the User stories section below, add an `x` between the `-[ ]` like this `- [x]` for any user story you complete. (☝️ Remove this paragraph after after checking off user stories)
-
 ## Required
 - [x] User sees a transition animation when going from the main screen to the add card screen.
 - [x] User sees a reveal animation when the flashcard is tapped and the answer is shown
