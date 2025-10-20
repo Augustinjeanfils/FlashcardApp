@@ -6,6 +6,8 @@ import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.view.ViewAnimationUtils
+import android.view.animation.Animation
+import android.view.animation.AnimationUtils
 import android.widget.Button
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
@@ -30,16 +32,16 @@ class MainActivity : AppCompatActivity() {
         // pour supprimer une carte
 
         findViewById<View>(R.id.delete_btn).setOnClickListener {
-            // 1️⃣ On récupère la question actuellement affichée
+            // On récupère la question actuellement affichée
             val flashcardQuestionToDelete = findViewById<TextView>(R.id.textView_question).text.toString()
 
-            // 2️⃣ On la supprime de la base de données
+            //  On la supprime de la base de données
             flashcardDatabase.deleteCard(flashcardQuestionToDelete)
 
-            // 3️⃣ On recharge la liste des cartes depuis la base de données
+            // On recharge la liste des cartes depuis la base de données
             allFlashcards = flashcardDatabase.getAllCards().toMutableList()
 
-            // 4️⃣ On ajuste l’index courant (au cas où la dernière carte a été supprimée)
+            // On ajuste l’index courant (au cas où la dernière carte a été supprimée)
             if (allFlashcards.size == 0) {
                 // Plus de cartes ! On affiche un message sympathique
                 findViewById<TextView>(R.id.textView_question).text = "Aucune carte restante 😅"
@@ -50,13 +52,13 @@ class MainActivity : AppCompatActivity() {
                     currentCardDisplayIndex = 0
                 }
 
-                // 5️⃣ On affiche la carte suivante disponible
+                // On affiche la carte suivante disponible
                 val currentCard = allFlashcards[currentCardDisplayIndex]
                 findViewById<TextView>(R.id.textView_question).text = currentCard.question
                 findViewById<TextView>(R.id.textView_response).text = currentCard.answer
             }
 
-            // (Optionnel) Petit feedback utilisateur
+            // Petit feedback utilisateur
             Snackbar.make(findViewById(R.id.main), "Carte supprimée ✅", Snackbar.LENGTH_SHORT).show()
         }
 
@@ -70,6 +72,46 @@ class MainActivity : AppCompatActivity() {
             if (allFlashcards.size == 0){
                 return@setOnClickListener
             }
+
+            val leftOutAnim = AnimationUtils.loadAnimation(it.context, R.anim.left_out)
+            val rightInAnim = AnimationUtils.loadAnimation(it.context, R.anim.right_in)
+
+            // Récupérer la vue de la carte
+            val questionTextView = findViewById<TextView>(R.id.textView_question)
+            val answerTextView = findViewById<TextView>(R.id.textView_response)
+
+            // Écouteur pour savoir quand l'animation "sortie gauche" est terminée
+            leftOutAnim.setAnimationListener(object : Animation.AnimationListener {
+                override fun onAnimationStart(animation: Animation?) {
+                    // Rien à faire ici pour le moment
+                }
+
+                override fun onAnimationEnd(animation: Animation?) {
+                    // Passer à la carte suivante une fois que l’animation "sortie" est terminée
+                    currentCardDisplayIndex++
+
+                    if (currentCardDisplayIndex >= allFlashcards.size) {
+                        currentCardDisplayIndex = 0
+                    }
+
+                    val nextCard = allFlashcards[currentCardDisplayIndex]
+                    questionTextView.text = nextCard.question
+                    answerTextView.text = nextCard.answer
+
+                    // Exécuter l'animation d'entrée droite
+                    questionTextView.startAnimation(rightInAnim)
+                }
+
+                override fun onAnimationRepeat(animation: Animation?) {
+                    // Pas nécessaire ici
+                }
+            })
+
+            // Lancer la première animation (sortie gauche)
+            questionTextView.startAnimation(leftOutAnim)
+            questionTextView.startAnimation(rightInAnim)
+
+
             currentCardDisplayIndex++
 
 
